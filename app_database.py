@@ -1,14 +1,21 @@
 import sqlite3
 import pandas as pd
+
 import re
 from IPython.display import display
 
+import os
+
+# Dynamically locate the path to database.db relative to this file
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+database_path = os.path.join(BASE_DIR, 'database.db')
+
 def create_database():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     conn.close()
 
 def drop_all_tables():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = c.fetchall()
@@ -40,7 +47,7 @@ def create_table(table_name, columns):
     Returns:
     None
     """
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("DROP TABLE IF EXISTS " + table_name)
     c.execute("CREATE TABLE IF NOT EXISTS " + table_name + " (" + columns + ")")
@@ -58,7 +65,7 @@ def create_table_from_dataframe(dataframe, table_name):
     Returns:
     None
     """
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     columns = dataframe.columns
     types = dataframe.dtypes
     column_defs = []
@@ -83,14 +90,14 @@ def create_table_from_dataframe(dataframe, table_name):
     conn.close()
 
 def delete_table(table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("DROP TABLE IF EXISTS " + table_name)
     conn.commit()
     conn.close()
 
 def insert_dataframe_into_table(dataframe, table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     columns = dataframe.columns
     columns_quoted = [f'"{col}"' for col in columns]
     columns_str = ", ".join(columns_quoted)
@@ -102,7 +109,7 @@ def insert_dataframe_into_table(dataframe, table_name):
     conn.commit()
 
 def create_and_insert_table_from_dataframe(dataframe, table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     columns = dataframe.columns
     types = dataframe.dtypes
     column_defs = []
@@ -141,7 +148,7 @@ def create_and_insert_table_from_dataframe(dataframe, table_name):
     conn.close()
 
 def print_all_columns_in_table(table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("PRAGMA table_info(" + table_name + ")")
     columns = c.fetchall()
@@ -151,7 +158,7 @@ def print_all_columns_in_table(table_name):
     conn.close()
 
 def fill_table(table_name, values):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("PRAGMA table_info(" + table_name + ")")
     columns = c.fetchall()
@@ -167,7 +174,7 @@ def fill_table_with_dataList(table_name, data):
     try:
         placeholders = ', '.join(['?'] * len(data[0]))
         sql = f"INSERT INTO {table_name} VALUES ({placeholders})"
-        conn = sqlite3.connect('database.db')
+        conn = sqlite3.connect(database_path)
         c = conn.cursor()
         c.executemany(sql, data)
         conn.commit()
@@ -179,7 +186,7 @@ def close(self):
     self.conn.close()
 
 def count_elements_in_table(table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("SELECT COUNT(*) FROM " + table_name)
     number = c.fetchone()[0]
@@ -187,7 +194,7 @@ def count_elements_in_table(table_name):
     return number
 
 def get_number_of_columns(table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("PRAGMA table_info(" + table_name + ")")
     columns = c.fetchall()
@@ -196,7 +203,7 @@ def get_number_of_columns(table_name):
 
 def print_table_by_name(table_name):
     # affichage pas sûr de fonctionner
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     print('\n----- Table: ' + table_name + ' -----')
     df = get_table_as_df(table_name)
     styles = [
@@ -212,7 +219,7 @@ def print_table_by_name(table_name):
     conn.close()
 
 def query_table_by_name(table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     if table_name[0].isdigit():
         table_name = '"' + table_name + '"'
@@ -223,7 +230,7 @@ def query_table_by_name(table_name):
     return elements
 
 def get_elements_by_column(table_name, column):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute('SELECT ' + column + ' FROM ' + table_name)
     elements = c.fetchall()
@@ -232,7 +239,7 @@ def get_elements_by_column(table_name, column):
     return elements
 
 def get_columns_names(table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("PRAGMA table_info(" + table_name + ")")
     columns = c.fetchall()
@@ -241,7 +248,7 @@ def get_columns_names(table_name):
     return columns
 
 def select_element_by_field(table_name, field, value):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute('SELECT * FROM ' + table_name + ' WHERE ' + field + ' = ?', (value,))
     elements = c.fetchall()
@@ -249,7 +256,7 @@ def select_element_by_field(table_name, field, value):
     return elements
 
 def get_all_tables_names():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = c.fetchall()
@@ -258,7 +265,8 @@ def get_all_tables_names():
     return tables
 
 def print_all_tables():
-    conn = sqlite3.connect('database.db')
+    print('database_path: ' + database_path)
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = c.fetchall()
@@ -267,7 +275,7 @@ def print_all_tables():
     conn.close()
 
 def get_number_of_tables():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = c.fetchall()
@@ -275,7 +283,7 @@ def get_number_of_tables():
     return len(tables)
 
 def add_column_to_table(table_name, column_name, column_type):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     try:
         c.execute("ALTER TABLE {} ADD COLUMN {} {};".format(table_name, column_name, column_type))
@@ -286,7 +294,7 @@ def add_column_to_table(table_name, column_name, column_type):
     conn.close()
 
 def fill_table_column_with_values(table_name, column_name, values):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     for value in values:
         c.execute("UPDATE {} SET {} = ? WHERE name = ?;".format(table_name, column_name), (value[1], value[0]))
@@ -294,14 +302,14 @@ def fill_table_column_with_values(table_name, column_name, values):
     conn.close()
 
 def update_column_set_value(table_name, column_to_change, data_to_change, column_to_match, data_to_match):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("UPDATE {} SET {} = ? WHERE {} = ?;".format(table_name, column_to_change, column_to_match), (data_to_change, data_to_match))
     conn.commit()
     conn.close()
 
 def get_last_id_from_table(table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("SELECT id FROM " + table_name + " ORDER BY id DESC LIMIT 1")
     last_id = c.fetchone()[0]
@@ -309,37 +317,62 @@ def get_last_id_from_table(table_name):
     return last_id
 
 def get_value_where_column_matches(table_name, column_to_match, data_to_match, column_to_return):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("SELECT {} FROM {} WHERE {} = ?;".format(column_to_return, table_name, column_to_match), (data_to_match,))
     value = c.fetchone()[0]
     conn.close()
     return value
 
-def add_element_to_table(table_name, values):
+def add_element_to_table(table_name, values, refactor_values=False, conflict_mode='error'):
     """
     Add a new element to a table in the database.
 
     Parameters:
-    table_name (str): The name of the table to add the element to.
-    values (list): A list of values to add to the table.
+    - table_name (str): The name of the table to add the element to.
+    - values (list): A list of values to add to the table.
+    - refactor_values (bool): If True, sanitize values (replace special characters with underscores).
+    - conflict_mode (str): What to do on UNIQUE constraint conflict. Options:
+        'error'   -> Raise IntegrityError (default),
+        'ignore'  -> Do nothing if conflict,
+        'replace' -> Replace the existing row entirely (⚠ will reset id).
 
     Returns:
-    None
+    - None
     """
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute("PRAGMA table_info(" + table_name + ")")
-    columns = c.fetchall()
+    conn = sqlite3.connect(database_path)
+    try:
+        c = conn.cursor()
+        c.execute("PRAGMA table_info(" + table_name + ")")
+        columns = c.fetchall()
 
-    values = [re.sub(r' ', '_', str(value)) for value in values]
-    values = [re.sub(r'\?', '_', str(value)) for value in values]
-    column_names = ', '.join([column[1] for column in columns if column[1] != 'id'])
-    values_string = ', '.join(['?' for _ in range(len(values))])
-    
-    c.execute(f"INSERT INTO {table_name} ({column_names}) VALUES ({values_string})", values)
-    conn.commit()
-    conn.close()
+        column_names_list = [column[1] for column in columns if column[1] != 'id']
+        if len(values) != len(column_names_list):
+            raise ValueError("Number of values doesn't match number of columns (excluding 'id').")
+        
+        column_names = ', '.join(column_names_list)
+        placeholders = ', '.join(['?' for _ in values])
+
+        if refactor_values:
+            #values = [re.sub(r' ', '_', str(value)) for value in values]                # Replace spaces with underscores
+            #values = [re.sub(r'\?', '_', str(value)) for value in values]               # Replace question marks with underscores
+            values = [re.sub(r'[^a-zA-Z0-9_]', '_', str(value)) for value in values]    # Replace special characters with underscores, only keep letters, numbers and underscores
+
+        if conflict_mode == 'ignore':
+            sql = f"INSERT OR IGNORE INTO {table_name} ({column_names}) VALUES ({placeholders})"
+        elif conflict_mode == 'replace':
+            sql = f"INSERT OR REPLACE INTO {table_name} ({column_names}) VALUES ({placeholders})"
+        else:
+            sql = f"INSERT INTO {table_name} ({column_names}) VALUES ({placeholders})"
+
+        c.execute(sql, values)
+        conn.commit()
+    except sqlite3.IntegrityError as e:
+        print(f"⚠ IntegrityError in table '{table_name}': {e} | Values: {values}")
+        if conflict_mode == 'error':
+            raise e
+    finally:
+        conn.close()
 
 def delete_element_from_table(table_name, column, value):
     """
@@ -350,35 +383,35 @@ def delete_element_from_table(table_name, column, value):
     - column (str): Le nom de la colonne à vérifier.
     - value (str): La valeur de la colonne à vérifier.
     """
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("DELETE FROM " + table_name + " WHERE " + column + " = ?", (value,))
     conn.commit()   
     conn.close()
 
 def delete_elements_from_table_with_2_conditions(table_name, column1, value1, column2, value2):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("DELETE FROM " + table_name + " WHERE " + column1 + " = ? AND " + column2 + " = ?", (value1, value2))
     conn.commit()   
     conn.close()
 
 def delete_elements_from_table_with_3_conditions(table_name, column1, value1, column2, value2, column3, value3):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("DELETE FROM " + table_name + " WHERE " + column1 + " = ? AND " + column2 + " = ? AND " + column3 + " = ?", (value1, value2, value3))
     conn.commit()   
     conn.close()
 
 def delete_elements_from_table_with_4_conditions(table_name, column1, value1, column2, value2, column3, value3, column4, value4):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("DELETE FROM " + table_name + " WHERE " + column1 + " = ? AND " + column2 + " = ? AND " + column3 + " = ? AND " + column4 + " = ?", (value1, value2, value3, value4))
     conn.commit()   
     conn.close()
 
 def delete_row_from_table(table_name, id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("DELETE FROM " + table_name + " WHERE id = ?", (id,))
     conn.commit()
@@ -394,7 +427,7 @@ def update_cell_in_table(table_name, column, row_id, new_value):
     - row_id (int): L'identifiant de la ligne à mettre à jour.
     - value (str): La valeur de la colonne à vérifier.
     """
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
 
     print("table_name: " + str(table_name))
@@ -408,18 +441,22 @@ def update_cell_in_table(table_name, column, row_id, new_value):
     for col in columns:
         if col[1] == column:
             if col[2] == 'INTEGER':
-                new_value = int(new_value)
+                updated_value = int(new_value)
             elif col[2] == 'REAL':
-                new_value = float(new_value)
+                updated_value = float(new_value)
             elif col[2] == 'BOOLEAN':
-                new_value = bool(new_value)
+                if str(new_value).lower() in ['0', 'false', 'no', '', 'none']:
+                    updated_value = 0
+                else:
+                    updated_value = 1
             elif col[2] == 'TEXT':
-                new_value = str(new_value)
+                updated_value = str(new_value)
             else:
                 print("Colunm type not recognized.")
             break
-
-    c.execute("UPDATE " + table_name + " SET " + column + " = ? WHERE id = ?", (new_value, row_id))
+    
+    print("updated_value : ", updated_value)
+    c.execute("UPDATE " + table_name + " SET " + column + " = ? WHERE id = ?", (updated_value, row_id))
 
     conn.commit()
     conn.close()
@@ -437,7 +474,7 @@ def edit_row_with_conditions(table_name, conditions, new_values):
     - None
     """
     # Connexion à la base de données
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
 
     # Création des clauses SET et WHERE
@@ -457,7 +494,7 @@ def edit_row_with_conditions(table_name, conditions, new_values):
         conn.close()
 
 def run_query(query):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     try:
         c.execute(query)
@@ -468,7 +505,7 @@ def run_query(query):
         conn.close()
 
 def get_Code_From_Name_And_Value(table_name, name, value):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     if type(value) == bool:
         value = int(value)
@@ -483,7 +520,7 @@ def get_Code_From_Name_And_Value(table_name, name, value):
     return code
 
 def get_Code_From_MF(MF):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     table_name = 'CodeTraduction'
     c.execute('SELECT code FROM ' + table_name + ' WHERE MF = ?', (MF,))
@@ -495,7 +532,7 @@ def get_Code_From_MF(MF):
     return code
 
 def get_table_as_df(table_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     df = pd.read_sql_query("SELECT * FROM " + table_name, conn)
     conn.close()
     return df
@@ -511,7 +548,7 @@ def check_if_exists_in_table(table_name, conditions):
     Retourne:
     - bool: True si un enregistrement existe, sinon False.
     """
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     where_clause = " AND ".join([f"{col} = ?" for col in conditions.keys()])
     where_values = list(conditions.values())
@@ -522,7 +559,7 @@ def check_if_exists_in_table(table_name, conditions):
     return exists
 
 def check_if_exists_in_table_with_2_conditions(table_name, column1, value1, column2, value2):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("SELECT EXISTS(SELECT 1 FROM {} WHERE {} = ? AND {} = ? LIMIT 1)".format(table_name, column1, column2), (value1, value2))
     exists = c.fetchone()[0] == 1
@@ -531,13 +568,13 @@ def check_if_exists_in_table_with_2_conditions(table_name, column1, value1, colu
 
 
 def close_database():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     conn.close()
 
 if __name__ == '__main__':
     nb_tables = get_number_of_tables()
     print('Nombre de tables: ' + str(nb_tables))
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(database_path)
     c = conn.cursor()
     c.execute("DROP TABLE IF EXISTS Layers_rules")
     c.execute("DROP TABLE IF EXISTS DXF_Layers")

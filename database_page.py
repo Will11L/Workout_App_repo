@@ -12,6 +12,8 @@
 # strictly prohibited without the prior written consent of William Lehnert."
 # =================================================================================================================================================#
 
+# -------------------- Libraries -------------------- #
+
 import re                                           # Regex to find patterns in strings
 import pandas as pd                                 # To manipulate dataframes
 
@@ -33,12 +35,12 @@ import sqlite3                                      # To create a database
 import app_database as db                           # To interact with the database (create tables, add elements, etc.)
 
 #?import Interface_FrontEnd_styles_firefox as css_s   # To stylize the interface (Firefox)
-import common_css as common_css                     # To stylize the interface (Chrome)
-import styles_database_page as css_s      # to stylize the interface (Chrome)
+from styles import common_css as common_css                     # To stylize the interface (Chrome)
+from styles import styles_database_page as css_s      # to stylize the interface (Chrome)
 
 import importlib                                    # To reload the modules
-importlib.reload(db)                                # Reload the db module
-importlib.reload(css_s)                             # Reload the css_s module
+#importlib.reload(db)                                # Reload the db module
+#importlib.reload(css_s)                             # Reload the css_s module
 
 #?import pypdf                                        # To concatenate PDF files
 
@@ -53,18 +55,65 @@ import threading                                    # To use threads
 import warnings
 warnings.filterwarnings("ignore", message="Specified region overlaps with the following existing object(s) in the grid")
 
+# -------------------- Modules and external files -------------------- #
+
+import core.page_loader as pl
+import core.page_redirection as pr
+
+import core.ping_user as pu
+
+# =================================================================================================================================================#
+
 # -------------------- App interface -------------------- #
 
 class Interface:
 
     def __init__(self):
-        pass
-        # Instanciation of your database
+        file_name = os.path.basename(__file__)
+        self.file_name = os.path.splitext(file_name)[0]
+        self.session_token = None
+        self.user_id = None
+        self.template = None
+
+        self.modal = pn.Modal(
+            pn.Column(),
+            width=500,
+            height=500,
+            background_close=False,
+            show_close_button=False
+        )
+
+        #* ---------- State ---------- *#
+            
+        pn.state.onload(self.on_load)
+        #pn.state.on_session_destroyed(self.on_session_destroyed)
+        
+        #* ---------- callbacks ---------- *#
+
+        # 300000 = 5 minutes
+        # 1500000 = 25 minutes
+        # TODO -> do a common timer for all pages
+        pn.state.add_periodic_callback(lambda: pu.ping_user(self, self.file_name), 300000)
+
+        #* ---------- Database ---------- *#
+        #? Nothing to do here
         #self.db = db.create_database()          # Create a database
+    
+    def on_load(self):
+
+        #* ---------- Common loading part ---------- *#
+
+        pl.on_page_load(self, self.file_name)
+
+        #* ---------- Specific loading part ---------- *#
+        # TODO : only admins can access this page -> check the user role
+        #? Nothing to do here
 
     def display(self):
 
         def display_settings(event):
+            # TODO : to be deleted -> not here
+            # TODO : has to proose a modal with settings ?
             Settings_toggle = event.obj
             if event.new:
                 Settings_toggle.icon = 'eye'
@@ -109,8 +158,8 @@ class Interface:
                 table = db.get_table_as_df(str(table_name))
                 print('table :', table)
                 print('len(product_table) :', len(table))
-            
-                if cell_row_index >= len(table):
+                
+                if cell_row_index > len(table):
                     print("Row index out of range")
                     pn.state.notifications.error(f"Row index out of range for table {table_name}")
                     return
@@ -144,26 +193,18 @@ class Interface:
             template.open_modal()
         
         def change_page(event):
-            selected_page = event.obj.value
-            if selected_page == 'Main page':
-                redirection_pane.object = "<script>window.location.href = 'http://localhost:8080/main_page';</script>"
-            elif selected_page == 'Database page':
-                redirection_pane.object = "<script>window.location.href = 'http://localhost:8080/database_page';</script>"
-            elif selected_page == 'Page 1':
-                redirection_pane.object = "<script>window.location.href = 'http://localhost:8080/page1';</script>"
-            elif selected_page == 'Page 2':
-                redirection_pane.object = "<script>window.location.href = 'http://localhost:8080/page2';</script>"
-            else:
-                print("Error : Page not found")
+            pr.change_page(self, event)
+            
         
-        (template, redirection_pane, 
+        (template,
             w_page_selector, id_button,
             w_settings_toggle, w_display_database_button, w_allow_drag_toggle,
             gridStack, tuple_of_tables_and_tabulators,
             list_of_Sidebar_widgets, list_of_Settings_widgets
             ) = self._build_interface()
 
-        # ---------- Widgets Events ---------- #    
+        # ---------- Widgets Events ---------- #
+        #TODO to put at the good place / change the aspect of this part of the code   
         # * ---------- Sidebar Widgets ---------- * #        
         for widget in list_of_Settings_widgets:
             widget.visible = False
@@ -310,9 +351,6 @@ class Interface:
         template.sidebar.append(w_display_database_button)
         template.sidebar.append(w_allow_drag_toggle)
 
-        redirection_pane = pn.pane.HTML("")
-        template.sidebar.append(redirection_pane)
-
         for element in template.sidebar:
             element.sizing_mode = "stretch_width"
 
@@ -333,6 +371,7 @@ class Interface:
         number_of_tables = len(tables_name)
         print("Number of tables in the database :", number_of_tables)
         tuple_of_tables_and_tabulators = []
+        number_of_column = 4
         row = 0
         col = 0
         for table in tables_name:
@@ -365,18 +404,21 @@ class Interface:
             )
 
             column_to_add.append(tabulator)
-
-            if col >= 2:
+            
+            if col >= number_of_column:
                 row += 1
                 col = 0
             gridStack[row, col] = column_to_add
             tuple_of_tables_and_tabulators.append((table, tabulator))
             col += 1
+            
+
+
         
         # ? --------------- Dashboard --------------- ? #
         # Return all widgets
         all_widgets = (
-            template, redirection_pane,
+            template,
             w_page_selector, id_button,
             w_settings_toggle, w_display_database_button, w_allow_drag_toggle,
             gridStack, tuple_of_tables_and_tabulators,

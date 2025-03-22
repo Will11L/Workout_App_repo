@@ -14,11 +14,11 @@ COPY update_requirements.py .
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
  
-# Copy the ./files directory into the container
-COPY files ./files
-
-# Copy the ./core directory into the container
+# Copy the directory into the container
 COPY core ./core
+COPY data ./files
+COPY files ./files
+COPY  tests ./tests
  
 # Copy only necessary application files
 COPY app_bootstrap.py .
@@ -29,8 +29,9 @@ COPY exec_file.py .
 COPY login_page.py .
 COPY main_page.py .
 COPY database.db .
-COPY page1.py .
-COPY page2.py .
+# TODO : page_1.py, page_2.py will be removed
+COPY page_1.py . 
+COPY page_2.py .
 COPY styles_database_page.py .
 COPY styles_login_page.py .
 COPY styles_main_page.py .

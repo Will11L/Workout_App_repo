@@ -18,6 +18,7 @@ import pandas as pd                                 # To manipulate dataframes
 import numpy as np                                  # To manipulate arrays
 #?import win32com.client                              # To interact with other software
 import os                                           # To interact with the operating system (create folders, move files, etc.)
+import sys
 import shutil                                       # To move files
 
 import time                                         # To use time.sleep() function
@@ -32,13 +33,14 @@ from IPython.display import display                 # To display the widgets
 import sqlite3                                      # To create a database
 import app_database as db                           # To interact with the database (create tables, add elements, etc.)
 
+
 #?import Interface_FrontEnd_styles_firefox as css_s   # To stylize the interface (Firefox)
-import common_css as common_css                     # To stylize the interface (Chrome)
-import styles_login_page as css_s                   # to stylize the interface (Chrome)
+from styles import common_css as common_css                     # To stylize the interface (Chrome)
+from styles import styles_login_page as css_s                   # to stylize the interface (Chrome)
 
 import importlib                                    # To reload the modules
-importlib.reload(db)                                # Reload the db module
-importlib.reload(css_s)                             # Reload the css_s module
+#importlib.reload(db)                                # Reload the db module
+#importlib.reload(css_s)                             # Reload the css_s module
 
 #?import pypdf                                        # To concatenate PDF files
 
@@ -54,6 +56,13 @@ import warnings
 warnings.filterwarnings("ignore", message="Specified region overlaps with the following existing object(s) in the grid")
 
 import uuid
+
+# -------------------- Modules and external files -------------------- #
+
+import core.page_redirection as pr
+import core.page_loader as pl
+
+import core.ping_user as pu
 
 # =================================================================================================================================================#
 
@@ -77,12 +86,15 @@ class Login:
                 user_match = users[users['SSO_id'].astype(str) == sso]
 
                 if user_match.empty:
-                    msg = "SSO / User not found"
-                    notif = pn.state.notifications.warning
+                    pn.state.notifications.error("SSO / User not found", duration=2000)
+                    sso_TextInput.value = "Enter a valid login"
+                    sso_TextInput.stylesheets = [css_s.stylesheet_TextInput_error]
 
                 elif password != user_match['password'].values[0]:
-                    msg = "Wrong password"
-                    notif = pn.state.notifications.error
+                    pn.state.notifications.error("Wrong password", duration=2000)
+                    password_TextInput.value = ""
+                    #TODO : change style of the password input when error
+                    password_TextInput.stylesheets = [css_s.stylesheet_TextInput_error]
 
                 else:
                     # Update the user_sessions table
@@ -102,24 +114,20 @@ class Login:
                         else:
                             db.edit_row_with_conditions('users_sessions', {'is_active': True, 'session_start': session_start}, {'user_id': sso, 'session_token': session_token})
                     except Exception as e:
-                        msg = "Error while updating user_sessions table"
-                        notif = pn.state.notifications.error
                         print("Error while updating user_sessions table:", e)
+                        pn.state.notifications.error("Error while updating user_sessions table", duration=2000)
                     else:
-                        msg = "Login successful"
+                        # Redirection only if successful login
                         
                         pn.state.notifications.success("Login successful", duration=2000)
 
-                        # Redirection only if successful login
-                        time.sleep(2)
-                        redirect_url = f"http://localhost:8080/main_page?session_token={session_token}&user_id={sso}"
-                        redirection_pane.object = f"<script>window.location.href = '{redirect_url}';</script>"
+                        time.sleep(1)
+                        pr.redirection_to_url_with_token_and_user_id(pr.main_page_path, session_token, sso)
                             
 
             except Exception as e:
                 print("Error while checking login:", e)
                 pn.state.notifications.error("Error while checking login", duration=2000)
-                notif(msg, duration=2000)
 
             else:
                 print("✅ Login process completed.")
@@ -127,7 +135,7 @@ class Login:
         def update_database(event, tabulator, table):
             pass
         
-        (template, redirection_pane,
+        (template,
             sso_TextInput, password_TextInput, login_button,
             ) = self._build_interface()
 
@@ -174,33 +182,32 @@ class Login:
             main_layout = None,                          # Default is 'card', accept [None, 'card']
             collapsed_sidebar = True,                     # Default is False
             header = None,                                # Default is 'default'
-            raw_css = [common_css.template_css],
+            raw_css = [common_css.template_css, css_s.login_template_css],
             logo = "./files/images/gevernova_logo_white.png",
             favicon = "./files/images/gevernova_logo_white.png",
             theme_toggle = False,
+            busy_indicator = None
             #meta_refresh = '10'               # Refresh the page every 10 seconds
         )
+        template.header.allow_None=True
 
         # ---------- Header ---------- #
 
         template.modal.append(pn.Column(sizing_mode='stretch_width'))
         template.modal.append(pn.Column(sizing_mode='stretch_width'))
 
-        #? ----------Widgets definition, create all of them here ---------- ?#       
+        #? ---------- Widgets definition, create all of them here ---------- ?#       
 
         # ---------- Sidebar ---------- #
 
         # * ---------- Settings ---------- * #
-
-        redirection_pane = pn.pane.HTML("")
-        template.sidebar.append(redirection_pane)
 
         #? -------------------- Main -------------------- ?#
 
         #*---------- Partie 1 : Login ----------*#
 
         gridStack = pn.GridStack(
-            allow_resize=True,
+            allow_resize=False,
             allow_drag=False,
             align="center",
             sizing_mode="stretch_both",
@@ -212,18 +219,19 @@ class Login:
             options=['English', 'French', 'Spanish'],
             value='English',
             align='start',
+            sizing_mode='stretch_width',
             stylesheets = [css_s.stylesheet_language_selector]
         )
         
         markdown_login = pn.pane.Markdown(
-            "# Please Log in",
+            "###### Please Log in",
             align='start',
-            
+            sizing_mode='stretch_width',
             stylesheets = [css_s.stylesheet_markdown_login]
         )
 
         sso_TextInput = pn.widgets.TextInput(
-            name='SSO or Login',
+            name='Login',
             placeholder='Enter your SSO',
             value='',
             align='start',
@@ -265,15 +273,15 @@ class Login:
             stylesheets = [css_s.stylesheet_login_image]
         )
 
-        white_sand = "#F5F5F5"
+        cloud = common_css.cloud
         
-        nrows = 3
-        ncols = 3
+        nrows = 7
+        ncols = 5
         #? Row 1 → Top margin
-        gridStack[0:1 , :] = pn.Spacer(height=50, styles=dict(background=white_sand))
+        gridStack[0:1 , :] = pn.Spacer(height=50, styles=dict(background=cloud))
 
         #? Row 2 → Center row
-        gridStack[1:nrows , 0] = pn.Spacer(width=50, styles=dict(background=white_sand))
+        gridStack[1:nrows , 0] = pn.Spacer(width=50, styles=dict(background=cloud))
         
         col_login_image = 0
         end_col = 0
@@ -287,17 +295,17 @@ class Login:
         gridStack[1:nrows , 1:col_login_image] = login_image
         gridStack[1:nrows , col_form:end_col] = column
 
-        gridStack[1:nrows , ncols-1] = pn.Spacer(width=50, styles=dict(background=white_sand))
+        gridStack[1:nrows , ncols-1] = pn.Spacer(width=50, styles=dict(background=cloud))
 
         #? Row 3 → Bottom margin
-        gridStack[nrows , :] = pn.Spacer(height=50, styles=dict(background=white_sand))
+        gridStack[nrows , :] = pn.Spacer(height=50, styles=dict(background=cloud))
         
         template.main.append(gridStack)
         
         # ? --------------- Dashboard --------------- ? #
         # Return all widgets
         all_widgets = (
-            template, redirection_pane,
+            template,
             sso_TextInput, password_TextInput, login_button,
             )
         return all_widgets

@@ -43,6 +43,7 @@ def hello_loop():
         print("👋 hello")
         time.sleep(5)
 
+# Function to manually check the session table
 def check_session(session_token):
     while True:
         try:

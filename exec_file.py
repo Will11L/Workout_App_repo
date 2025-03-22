@@ -1,16 +1,19 @@
 import subprocess
 import sys
 import time
+import platform
 
-# Fonction to kill all Panel processes
+# Fonction pour tuer tous les processus Panel (Windows uniquement)
 def kill_all_panels_windows():
+    if platform.system() != "Windows":
+        print("⚠️ Système non-Windows détecté. Aucune tâche Panel ne sera tuée.")
+        return
+
     try:
         print("🔪 Killing all Panel processes on Windows...")
-        # Use `tasklist` to find Panel processes
         tasks = subprocess.check_output(["tasklist"]).decode()
-        panel_tasks = [line for line in tasks.splitlines() if "panel" in line and "python.exe" in line]
-
-        # Extract process IDs and kill them
+        panel_tasks = [line for line in tasks.splitlines() if "panel" in line.lower() and "python.exe" in line.lower()]
+        
         for task in panel_tasks:
             pid = task.split()[1]
             print(f"   → Killing process ID: {pid}")
@@ -20,9 +23,8 @@ def kill_all_panels_windows():
     except Exception as e:
         print(f"❌ Error while killing Panel processes: {e}")
 
-# Fonction to launch the Panel server
+# Fonction pour lancer le serveur Panel
 def launch_panel():
-    
     command = [
         "panel", 
         "serve",
@@ -30,20 +32,17 @@ def launch_panel():
         "login_page.py", 
         "main_page.py", 
         "database_page.py",
-        "page1.py",
-        "page2.py",
-        #"--address=127.0.0.1",     # only allow local connections in container
-        "--address=0.0.0.0",        # allow all connections in container
+        "page_1.py",
+        "page_2.py",
+        "--address=0.0.0.0",
         "--port=8080",
         "--allow-websocket-origin=*",
         "--index=login_page.py",
-        "--unused-session-lifetime=5",  # allow 5 seconds of inactivity before session is destroyed
         "--dev"
     ]
 
     try:
         time.sleep(1)
-        
         print("✅ Panel server is starting...")
         print("\n🌐 Access your application in your browser:")
         print("   → http://localhost:8080/login_page (login page)")
@@ -53,7 +52,7 @@ def launch_panel():
         print("   → http://localhost:8080/page2")
         print("\n📎 Note: In logs, '0.0.0.0' means the server is listening on all interfaces.")
         print("--------------------------------------\n")
-
+        
         subprocess.run(command)
 
     except KeyboardInterrupt:
@@ -65,6 +64,5 @@ def launch_panel():
 
 # Point d'entrée principal
 if __name__ == "__main__":
-
     kill_all_panels_windows()
     launch_panel()

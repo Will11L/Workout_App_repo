@@ -1,4 +1,4 @@
-from common_css import *
+from styles.common_css import *
 
 #? ---------- Sidebar Widgets CSS Styles ---------- ? #
 

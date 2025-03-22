@@ -1,4 +1,7 @@
 # Colors
+from re import sub
+
+
 primary_color_palette = ['#005E60', '#C8FF08', '#FFFFFF', '#212121', '#FAFAFA', '#E3E3E3', '#CCCCCC', '#696969', '#484848']
 primary_accents = ['#59C3C9', '#439297', '#75CA64', '#58984B', '#BFA682', '#8F7D62']
 secondary_accents = ['#EC642B', '#F19F39', '#F5C147']
@@ -87,7 +90,7 @@ white_sand = '#F5F5F5'      # can be background color for the card when there is
                             # it is used for hover lists and tables
 danger = '#DC3545'          # for destructive actions and negate moods, for validation text, for danger buttons
 weed = '#28A745'
-strawberry = '#FF5B77'      # for background for danger alerts, error state
+strawberry = '#FFB7B7'      # for background for danger alerts, error state
 pistachio = '#98C379'       # for background for success alerts, success state
 
 black = '#000000'
@@ -103,9 +106,70 @@ fourth_color = '#1451C9'
 fifth_color = '#2A9555'
 sixth_color = '#F2BE38'
 
+
+#* ---------- Typography ---------- *#
+
+roboto_light = '300'
+roboto_regular = '400'
+roboto_medium = '500'
+roboto_bold = '700'
+
+h1_font_family = 'Roboto'
+h1_font_size = '96px'
+h1_font_weight = roboto_light
+
+h2_font_family = 'Roboto'
+h2_font_size = '60px'
+h2_font_weight = roboto_light
+
+h3_font_family = 'Roboto'
+h3_font_size = '48px'
+h3_font_weight = roboto_regular
+
+h4_font_family = 'Roboto'
+h4_font_size = '34px'
+h4_font_weight = roboto_regular
+
+h5_font_family = 'Roboto'
+h5_font_size = '24px'
+h5_font_weight = roboto_regular
+
+h6_font_family = 'Roboto'
+h6_font_size = '20px'
+h6_font_weight = roboto_medium
+
+subtitle1_font_family = 'Roboto'
+subtitle1_font_size = '16px'
+subtitle1_font_weight = roboto_regular
+
+subtitle2_font_family = 'Roboto'
+subtitle2_font_size = '14px'
+subtitle2_font_weight = roboto_medium
+
+body1_font_family = 'Roboto'
+body1_font_size = '16px'
+body1_font_weight = roboto_regular
+
+body2_font_family = 'Roboto'
+body2_font_size = '14px'
+body2_font_weight = roboto_regular
+
+button_font_family = 'Roboto'
+button_font_size = '14px'
+button_font_weight = roboto_medium
+
+caption_font_family = 'Roboto'
+caption_font_size = '12px'
+caption_font_weight = roboto_regular
+
+overline_font_family = 'Roboto'
+overline_font_size = '10px'
+overline_font_weight = roboto_regular
+
+
 #? ---------- Global CSS Styles ---------- ? #
 
-header_background = yale_blue
+header_background = black
 
 header_height = 40
 header_height_text = 15
@@ -117,8 +181,11 @@ tabulator_header_height = 16
 tabulator_cell_height = 12
 
 template_css = f"""
-
 /* -------------------- Header -------------------- */
+
+nav#header {{
+    top: 0 !important;
+}}
 
 #header-design-provider {{
     height: {header_height}px !important;
@@ -271,17 +338,35 @@ template_css = f"""
     width: auto !important;
 }}
 
+/* -------------------- Body -------------------- */
+
+body {{
+    display: flex !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    /*
+    background-color: {orange} !important;
+    height: 100% !important;
+    width: 100% !important;
+    */
+}}
 
 /* -------------------- Main, modal and notifications -------------------- */
 
 .main {{
-    background-color: {white} !important;
     padding : 0px 0px 0px !important;
+    margin: 0px !important;
     /*
+    background-color: {red} !important;
+    border: 2px solid {red} !important;
     width: 100% !important;
     height: 100% !important;
-    border-left: 3px solid {urgency_green} !important;
     */
+}}
+
+.fullscreen-button {{
+    border: 2px solid {red} !important;
+    color: {green} !important;
 }}
 
 .pn-modal-content {{
@@ -466,6 +551,7 @@ stylesheet_header_select = f"""
 :host .bk-input-group .bk-input {{
     font-family: Arial, sans-serif !important;
     font-size: {header_height_text}px !important;
+    font-weight: normal !important;
     padding: 5px !important;
     border: 1.5px solid {white} !important;
     border-radius: 20px !important;
